@@ -1,6 +1,7 @@
 .venv/
 models/
 results*/
+tensorboard_logs/
 *.ipynb
 *.sh
 .DS_Store
