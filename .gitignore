@@ -1,0 +1,9 @@
+.venv/
+models/
+results*/
+*.ipynb
+*.sh
+.DS_Store
+.idea/
+__pycache__/
+raw_traffic.json
