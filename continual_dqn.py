@@ -123,6 +123,7 @@ class ContinualDQN(nn.Module):
             prev_job = ",".join(self.job_id.split(",")[:-1]) + "#"
             if os.path.exists(f"./models/{prev_job}"):
                 self.current_task.model = MaskableDQN.load(f"./models/{prev_job}/final_model.zip", env=env)
+                print(f"Loaded model from {prev_job}")
             else:
                 raise ValueError(f"Failed {self.job_id}. Train {prev_job} first when continual_flag is {self.continual_flag}.")
         self.progress()
