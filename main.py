@@ -19,7 +19,7 @@ def main():
     parser.add_argument("--duration", type=str, default="month", help="week or month", choices=["week", "month"])
     parser.add_argument("--offset", type=int, default=0, help="Offset value")
     parser.add_argument("--num", type=int, default=1, help="Number of samples")
-    parser.add_argument("--mode", type=str, default="continual", choices=["continual", "dqn"])
+    parser.add_argument("--mode", type=str, default="continual", choices=["continual", "transfer"])
     parser.add_argument("--test_all_durations", type=bool, default=True, help="Test on all durations")
     args = parser.parse_args()
 

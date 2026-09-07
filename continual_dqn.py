@@ -76,10 +76,10 @@ class ContinualDQN(nn.Module):
 
         if mode == "continual":
             self.continual_flag = True
-        elif mode == "dqn":
+        elif mode == "transfer":
             self.continual_flag = False
         else:
-            raise ValueError("mode must be either 'continual' or 'dqn'")
+            raise ValueError("mode must be either 'continual' or 'transfer'")
 
         self.generator = generator
         self.detector = detector
