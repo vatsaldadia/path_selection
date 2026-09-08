@@ -115,6 +115,8 @@ class ContinualDQN(nn.Module):
         self.current_task = Task(self.generator.env_last_hour + 1, env)
         if self.mode == "transfer" and self.job_id.find(",") != -1:
             prev_job = ",".join(self.job_id.split(",")[:-1]) + "#"
+            if prev_job.find(",") == -1:
+                prev_job = prev_job.replace("transfer", "offline")
             if os.path.exists(f"./models/{prev_job}"):
                 self.current_task.model = MaskableDQN.load(f"./models/{prev_job}/final_model.zip", env=env)
                 print(f"Loaded model from {prev_job}")
