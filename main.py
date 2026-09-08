@@ -19,7 +19,7 @@ def main():
     parser.add_argument("--duration", type=str, default="month", help="week or month", choices=["week", "month"])
     parser.add_argument("--offset", type=int, default=0, help="Offset value")
     parser.add_argument("--num", type=int, default=1, help="Number of samples")
-    parser.add_argument("--mode", type=str, default="continual", choices=["continual", "transfer", "online"])
+    parser.add_argument("--mode", type=str, default="continual", choices=["continual", "transfer", "online", "offline"])
     parser.add_argument("--test_all_durations", type=bool, default=True, help="Test on all durations")
     args = parser.parse_args()
 
@@ -36,7 +36,7 @@ def main():
     generator = Generator()
     if args.mode == "transfer":
         traffics = [f"{args.duration}_{args.offset + (args.num - 1)}.csv"]
-    elif args.mode == "continual" or args.mode == "online":
+    elif args.mode == "continual" or args.mode == "online" or args.mode == "offline":
         traffics = [f"{args.duration}_{args.offset + i}.csv" for i in range(args.num)]
     else:
         raise Exception(f"Don't know how to handle mode {args.mode} while loading traffic")
@@ -46,9 +46,12 @@ def main():
     if args.mode == "online":
         timesteps = generator.get_total_traffic_count()
         threshold = 24 * args.num
-    elif args.mode == "continual" or args.mode == "online":
+    elif args.mode == "continual" or args.mode == "transfer":
         timesteps = 200000
         threshold = 24
+    elif args.mode == "offline":
+        timesteps = 200000 * args.num
+        threshold = 24 * args.num
     else:
         raise Exception(f"Don't know how to handle mode {args.mode} while setting timesteps and threshold")
 
