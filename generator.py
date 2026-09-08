@@ -9,6 +9,7 @@ class Generator:
         self.traffic_start_hour = 0
         self.env_last_hour = -1
         self.csv_traffics = []
+        self.total_count = 0
 
         with open(pkl_file, "rb") as f:
             self.network_data = pickle.load(f)
@@ -39,6 +40,7 @@ class Generator:
                 "latency": (float(flow["delay"])),
                 "duration": (int(flow["duration"])),
             })
+            self.total_count += 1
         self.traffic_start_hour = max(self.traffic.keys()) + 1
 
     def get_hour_traffic(self, hour):
@@ -57,6 +59,9 @@ class Generator:
 
     def get_csv_traffics(self):
         return self.csv_traffics
+
+    def get_total_traffic_count(self):
+        return self.total_count
 
     def get_max_bw(self):
         service_max_bw = defaultdict(int)

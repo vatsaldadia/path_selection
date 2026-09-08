@@ -74,15 +74,9 @@ class ContinualDQN(nn.Module):
     ):
         super().__init__()
 
-        if mode == "continual":
-            self.continual_flag = True
-        elif mode == "transfer":
-            self.continual_flag = False
-        else:
-            raise ValueError("mode must be either 'continual' or 'transfer'")
-
         self.generator = generator
         self.detector = detector
+        self.mode = mode
         self.timesteps = timesteps
         self.epochs = epochs
         self.ewc_lambda = ewc_lambda
@@ -98,7 +92,7 @@ class ContinualDQN(nn.Module):
 
         self.dynamic_end_times = dynamic_end_times
         self.job_id = job_id
-        if self.continual_flag:
+        if self.mode == "continual":
             self.writer = SummaryWriter(f'./tensorboard_logs/{job_id}')
 
         # self.optimizer = th.optim.Adam(self.parameters(), lr=1e-4)
@@ -119,13 +113,13 @@ class ContinualDQN(nn.Module):
 
         env = self.create_env(self.generator.env_last_hour + 1, phase="training")           # NOTE: 1 env handles 1 traffic csv file
         self.current_task = Task(self.generator.env_last_hour + 1, env)
-        if not self.continual_flag and self.job_id.find(",") != -1:
+        if self.mode == "transfer" and self.job_id.find(",") != -1:
             prev_job = ",".join(self.job_id.split(",")[:-1]) + "#"
             if os.path.exists(f"./models/{prev_job}"):
                 self.current_task.model = MaskableDQN.load(f"./models/{prev_job}/final_model.zip", env=env)
                 print(f"Loaded model from {prev_job}")
             else:
-                raise ValueError(f"Failed {self.job_id}. Train {prev_job} first when continual_flag is {self.continual_flag}.")
+                raise ValueError(f"Failed {self.job_id}. Train {prev_job} first when mode is {self.mode}.")
         self.progress()
 
     def make_env(self, env_first_hour, phase):

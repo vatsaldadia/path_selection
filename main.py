@@ -19,7 +19,7 @@ def main():
     parser.add_argument("--duration", type=str, default="month", help="week or month", choices=["week", "month"])
     parser.add_argument("--offset", type=int, default=0, help="Offset value")
     parser.add_argument("--num", type=int, default=1, help="Number of samples")
-    parser.add_argument("--mode", type=str, default="continual", choices=["continual", "transfer"])
+    parser.add_argument("--mode", type=str, default="continual", choices=["continual", "transfer", "online"])
     parser.add_argument("--test_all_durations", type=bool, default=True, help="Test on all durations")
     args = parser.parse_args()
 
@@ -32,20 +32,29 @@ def main():
             job_id += "#"
     script_run = subprocess.run(["./delete.sh", job_id], capture_output=True, text=True)
     print(script_run.stdout, end="")
-    timesteps = 200000
-    threshold = 24
-
-    print(f"Creating job {job_id} with {threshold=} and {timesteps=}")
 
     generator = Generator()
-    if args.mode == "continual":
+    if args.mode == "transfer":
+        traffics = [f"{args.duration}_{args.offset + (args.num - 1)}.csv"]
+    elif args.mode == "continual" or args.mode == "online":
         traffics = [f"{args.duration}_{args.offset + i}.csv" for i in range(args.num)]
     else:
-        traffics = [f"{args.duration}_{args.offset + (args.num - 1)}.csv"]
+        raise Exception(f"Don't know how to handle mode {args.mode} while loading traffic")
     for traffic_file in traffics:
         generator.load_traffic(f"{traffic_file}")
 
+    if args.mode == "online":
+        timesteps = generator.get_total_traffic_count()
+        threshold = 24 * args.num
+    elif args.mode == "continual" or args.mode == "online":
+        timesteps = 200000
+        threshold = 24
+    else:
+        raise Exception(f"Don't know how to handle mode {args.mode} while setting timesteps and threshold")
+
     drift_detector = DriftDetector(threshold=threshold)
+
+    print(f"Creating job {job_id} with {threshold=} and {timesteps=}")
 
     continual_dqn = ContinualDQN(
         generator=generator,
