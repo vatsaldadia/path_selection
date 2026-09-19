@@ -5,6 +5,7 @@ tensorboard_logs/
 images/
 *.ipynb
 *.sh
+*.html
 .DS_Store
 .idea/
 __pycache__/
