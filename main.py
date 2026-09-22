@@ -17,6 +17,7 @@ from testing import test_all_durations
 def main():
     parser = argparse.ArgumentParser(description="Experiment Runner")
     parser.add_argument("--duration", type=str, default="month", help="week or month", choices=["week", "month"])
+    parser.add_argument("--type_of_traffic", type=int, default="cl", help="cl/real traffic", choices=["cl", "real"])
     parser.add_argument("--offset", type=int, default=0, help="Offset value")
     parser.add_argument("--num", type=int, default=1, help="Number of samples")
     parser.add_argument("--mode", type=str, default="continual", choices=["continual", "transfer", "online", "offline"])
@@ -35,9 +36,9 @@ def main():
 
     generator = Generator()
     if args.mode == "transfer":
-        traffics = [f"{args.duration}_{args.offset + (args.num - 1)}.csv"]
+        traffics = [f"{args.type_of_traffic}_{args.duration}_{args.offset + (args.num - 1)}.csv"]
     elif args.mode == "continual" or args.mode == "online" or args.mode == "offline":
-        traffics = [f"{args.duration}_{args.offset + i}.csv" for i in range(args.num)]
+        traffics = [f"{args.type_of_traffic}_{args.duration}_{args.offset + i}.csv" for i in range(args.num)]
     else:
         raise Exception(f"Don't know how to handle mode {args.mode} while loading traffic")
     for traffic_file in traffics:
