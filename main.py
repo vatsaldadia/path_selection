@@ -6,7 +6,6 @@ import os
 import torch
 
 from stable_baselines3.common.env_util import make_vec_env
-from sympy.physics.optics import jones_2_stokes
 
 from continual_dqn import ContinualDQN
 from drift_detector import DriftDetector
@@ -16,15 +15,15 @@ from testing import test_all_durations
 
 def main():
     parser = argparse.ArgumentParser(description="Experiment Runner")
-    parser.add_argument("--duration", type=str, default="month", help="week or month", choices=["week", "month"])
-    parser.add_argument("--type_of_traffic", type=int, default="cl", help="cl/real traffic", choices=["cl", "real"])
+    parser.add_argument("--duration", type=str, default="week", help="week or month", choices=["week", "month"])
+    parser.add_argument("--type_of_traffic", type=str, default="cl", help="cl/real traffic", choices=["cl", "real"])
     parser.add_argument("--offset", type=int, default=0, help="Offset value")
     parser.add_argument("--num", type=int, default=1, help="Number of samples")
     parser.add_argument("--mode", type=str, default="continual", choices=["continual", "transfer", "online", "offline"])
     parser.add_argument("--test_all_durations", type=bool, default=True, help="Test on all durations")
     args = parser.parse_args()
 
-    job_id = f"{args.mode}_{args.duration}_"
+    job_id = f"{args.type_of_traffic}_{args.mode}_{args.duration}_"
     for i in range(args.num):
         job_id += str(args.offset + i)
         if i != args.num - 1:
@@ -78,8 +77,8 @@ def main():
     if args.test_all_durations:
         print("\n----------------- CL TESTING ------------------")
         for i in range(0, 12):
-            print(f"Testing job {job_id} with traffic {args.duration}_{i}")
-            test_all_durations(job_id, f"{args.duration}_{i}")
+            print(f"Testing job {job_id} with traffic {args.type_of_traffic}_{args.duration}_{i}")
+            test_all_durations(job_id, f"{args.type_of_traffic}_{args.duration}_{i}")
 
 if __name__ == "__main__":
     main()
