@@ -32,16 +32,16 @@ SEED = 42
 
 class Task:
 
-    def __init__(self, first_hour: int, env: Union[gym.Env, VecEnv]):
+    def __init__(self, first_hour: int, env: Union[gym.Env, VecEnv], online_task: bool = False):
         self.first_hour = first_hour
         self.env = env
         self.model = MaskableDQN(
             policy=MaskableMultiInputPolicy,
             env=env,
             learning_rate=1e-4,
-            buffer_size=100000,
+            buffer_size=100000 if not online_task else 10000,
             learning_starts=10000,
-            batch_size=128,
+            batch_size=128 if not online_task else 32,
             gamma=0.995,
             tau=1,
             train_freq=4,
@@ -112,7 +112,7 @@ class ContinualDQN(nn.Module):
             return
 
         env = self.create_env(self.generator.env_last_hour + 1, phase="training")           # NOTE: 1 env handles 1 traffic csv file
-        self.current_task = Task(self.generator.env_last_hour + 1, env)
+        self.current_task = Task(self.generator.env_last_hour + 1, env, online_task=(self.mode == "online"))
         if self.mode == "transfer" and self.job_id.find(",") != -1:
             prev_job = ",".join(self.job_id.split(",")[:-1]) + "#"
             if prev_job.find(",") == -1:
