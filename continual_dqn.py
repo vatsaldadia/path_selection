@@ -19,6 +19,7 @@ from stable_baselines3.common.vec_env import VecEnv, VecNormalize
 from callbacks import DebugLoggingCallback
 from drift_detector import DriftDetector
 from env.path_selection_env import PathSelectionEnv
+from flops_tracker import FLOPSTracker
 from generator import Generator
 from maskable_dqn import MaskableDQN
 from maskable_features_extractor import MaskableFeaturesExtractor
@@ -74,6 +75,8 @@ class ContinualDQN(nn.Module):
     ):
         super().__init__()
 
+        self.flops_tracker = FLOPSTracker()
+
         self.generator = generator
         self.detector = detector
         self.mode = mode
@@ -109,6 +112,8 @@ class ContinualDQN(nn.Module):
             save_path = f"./models/{self.job_id}/"
             os.makedirs(save_path, exist_ok=True)
             self.current_task.model.save(f"{save_path}/final_model.zip")
+            flops_path = f"./results/{self.job_id}/"
+            self.flops_tracker.write_summary(f"{flops_path}/flops_summary.json")
             return
 
         env = self.create_env(self.generator.env_last_hour + 1, phase="training")           # NOTE: 1 env handles 1 traffic csv file
@@ -122,6 +127,7 @@ class ContinualDQN(nn.Module):
                 print(f"Loaded model from {prev_job}")
             else:
                 raise ValueError(f"Failed {self.job_id}. Train {prev_job} first when mode is {self.mode}.")
+        self.flops_tracker.set_observation_space(env.observation_space)
         self.progress()
 
     def make_env(self, env_first_hour, phase):
@@ -155,6 +161,9 @@ class ContinualDQN(nn.Module):
         # os.makedirs(save_path, exist_ok=True)
         os.makedirs(result_path, exist_ok=True)
 
+        device = "cuda:0" if th.cuda.is_available() else "cpu"
+        self.flops_tracker.benchmark_rl(model=self)
+
         print(f"Starting training on task with first hour {self.current_task.first_hour}")
 
         timesteps = self.timesteps
@@ -166,7 +175,9 @@ class ContinualDQN(nn.Module):
                                       callback=debug_callback,
                                       progress_bar=True)
 
-        # self.current_task.model.save(save_path + "best_model.zip")
+        self.flops_tracker.increment("env_steps", timesteps)
+        train_freq = self.current_task.model.train_freq.frequency
+        self.flops_tracker.increment("rl_train_steps", int(timesteps / train_freq))
 
         metrics = self.current_task.env.env_method("return_metrics")[0]  # get metrics from the first env
         with open(f"{result_path}/training_metrics.json", "w") as f:
@@ -184,15 +195,19 @@ class ContinualDQN(nn.Module):
 
         self.eval()
 
+        device = "cuda:0" if th.cuda.is_available() else "cpu"
+        self.flops_tracker.benchmark_fisher(self)
+
         for past_task in self.past_tasks:               # use data from previous tasks to compute importance of parameters
             buffer = past_task.env.env_method("get_rehearsal_buffer")[0]
             obs = buffer.sample(1024)
-            device = "cuda:0" if th.cuda.is_available() else "cpu"
             obs = {k: v.to(device) for k, v in obs.items()}
             outputs = self(obs)
             loss = th.mean(outputs ** 2)             # calculate "importance" via gradients
             self.zero_grad()
             loss.backward()
+
+            self.flops_tracker.increment("fisher_runs", 1)
 
             for n, p in params.items():
                 if p.grad is not None:
@@ -215,6 +230,7 @@ class ContinualDQN(nn.Module):
             print("Compressing continual model")
             fisher, snapshot_weights = self._compute_fisher()
             device = "cuda:0" if th.cuda.is_available() else "cpu"
+            self.flops_tracker.benchmark_compression(self)
 
             for epoch in range(self.epochs):
                 buffer = self.current_task.env.env_method("get_rehearsal_buffer")[0]
@@ -246,6 +262,8 @@ class ContinualDQN(nn.Module):
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
+
+                self.flops_tracker.increment("compression_epochs", 1)
 
             print("Compression complete, moving to next task")
 
