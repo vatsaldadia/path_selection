@@ -232,6 +232,7 @@ class ContinualDQN(nn.Module):
             device = "cuda:0" if th.cuda.is_available() else "cpu"
             self.flops_tracker.benchmark_compression(self)
 
+            self.train()
             for epoch in range(self.epochs):
                 buffer = self.current_task.env.env_method("get_rehearsal_buffer")[0]
                 obs = buffer.sample(128)
@@ -271,7 +272,7 @@ class ContinualDQN(nn.Module):
 
     def train(self, mode: bool = True):
         super().train(mode)
-        if mode:
+        if not self.past_tasks:
             self.change_task()
 
     def test(self, episodes=24):
