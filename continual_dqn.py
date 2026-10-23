@@ -170,6 +170,11 @@ class ContinualDQN(nn.Module):
 
         debug_callback = DebugLoggingCallback()
         assert self.current_task is not None
+
+        # if self.q_net and self.features_extractor:                      # layerwise transfer of weights from continual model to new task model
+        #     self.current_task.model.policy.q_net.q_net.load_state_dict(self.q_net.state_dict())
+        #     self.current_task.model.policy.q_net.features_extractor.load_state_dict(self.features_extractor.state_dict())
+
         self.current_task.model.learn(total_timesteps=timesteps,
                                       tb_log_name=f"{self.job_id}",
                                       callback=debug_callback,
