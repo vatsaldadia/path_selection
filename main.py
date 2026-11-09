@@ -16,7 +16,7 @@ from testing import test_all_durations
 def main():
     parser = argparse.ArgumentParser(description="Experiment Runner")
     parser.add_argument("--duration", type=str, default="week", help="week or month", choices=["week", "month"])
-    parser.add_argument("--type_of_traffic", type=str, default="cl", help="cl/real/p-real traffic", choices=["cl", "real", "p-real"])
+    parser.add_argument("--type_of_traffic", type=str, default="cl", help="cl/real/real-p traffic", choices=["cl", "real", "real-p"])
     parser.add_argument("--offset", type=int, default=0, help="Offset value")
     parser.add_argument("--num", type=int, default=1, help="Number of samples")
     parser.add_argument("--mode", type=str, default="continual", choices=["continual", "transfer", "online", "offline"])
