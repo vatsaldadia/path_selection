@@ -41,7 +41,7 @@ def main():
     else:
         raise Exception(f"Don't know how to handle mode {args.mode} while loading traffic")
     for traffic_file in traffics:
-        generator.load_traffic(f"{traffic_file}")
+        generator.load_traffic(f"./traffic/{args.type_of_traffic}/{traffic_file}")
 
     if args.mode == "online":
         timesteps = generator.get_total_traffic_count()
